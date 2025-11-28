@@ -1,4 +1,4 @@
-package com.example.demo.config;
+package com.gagreen.bowling.config;
 
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+        return http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
@@ -30,9 +30,8 @@ class SecurityConfig {
                         .requestMatchers(AUTH_WHITELIST).permitAll()
                         //@PreAuthorization 사용 -> 모든 경로에 대한 인증처리는 Pass
                         .anyRequest().permitAll()
-                );
-
-        return http.build();
+                )
+                .build();
     }
 
 }
