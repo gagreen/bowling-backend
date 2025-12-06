@@ -1,7 +1,7 @@
 package com.gagreen.bowling.config;
 
-import com.gagreen.bowling.dto.common.ApiBody;
-import com.gagreen.bowling.dto.common.ErrorBody;
+import com.gagreen.bowling.common.dto.ApiBody;
+import com.gagreen.bowling.common.dto.ErrorBody;
 import com.gagreen.bowling.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

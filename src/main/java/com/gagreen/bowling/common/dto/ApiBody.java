@@ -1,4 +1,4 @@
-package com.gagreen.bowling.dto.common;
+package com.gagreen.bowling.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
