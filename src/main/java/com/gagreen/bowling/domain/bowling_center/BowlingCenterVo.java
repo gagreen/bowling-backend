@@ -1,6 +1,5 @@
 package com.gagreen.bowling.domain.bowling_center;
 
-import com.gagreen.bowling.domain.favorite.FavoriteCenterVo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

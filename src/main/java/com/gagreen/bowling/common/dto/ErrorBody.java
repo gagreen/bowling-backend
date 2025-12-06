@@ -1,9 +1,7 @@
-package com.gagreen.bowling.dto.common;
+package com.gagreen.bowling.common.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.util.Date;
 
 
 @Getter

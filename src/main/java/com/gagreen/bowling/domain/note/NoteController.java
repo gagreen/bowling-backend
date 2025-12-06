@@ -1,13 +1,8 @@
 package com.gagreen.bowling.domain.note;
 
-import com.gagreen.bowling.domain.bowling_center.BowlingCenterRepository;
-import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
