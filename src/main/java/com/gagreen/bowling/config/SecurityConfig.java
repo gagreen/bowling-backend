@@ -27,7 +27,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    private static final String[] AUTH_WHITELIST = {"/**"};
+    private static final String[] AUTH_WHITELIST = {"/auth/**", "/centers/*"};
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

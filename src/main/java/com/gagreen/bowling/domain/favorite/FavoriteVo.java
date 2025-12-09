@@ -16,8 +16,9 @@ import java.time.Instant;
 @Builder
 @Entity
 @Table(name = "favorite_center")
-public class FavoriteCenterVo {
+public class FavoriteVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "favorite_id", nullable = false)
     private Long id;
 
@@ -27,13 +28,15 @@ public class FavoriteCenterVo {
     private UserVo user;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @JoinColumn(name = "center_id", nullable = false)
     private BowlingCenterVo center;
 
     @NotNull
     @ColumnDefault("(now())")
+    @Builder.Default
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private Instant createdAt = Instant.now();
+
 
 }

@@ -1,5 +1,7 @@
 package com.gagreen.bowling.domain.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -35,6 +37,7 @@ public class UserVo implements UserDetails {
     @Column(name = "account", nullable = false, length = 24)
     private String account;
 
+    @JsonIgnore
     @Size(max = 64)
     @NotNull
     @Column(name = "pw", nullable = false, length = 64)
@@ -65,6 +68,7 @@ public class UserVo implements UserDetails {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Stream.of("USER")
@@ -72,31 +76,37 @@ public class UserVo implements UserDetails {
                 .collect(Collectors.toList());
     }
 
+    @JsonIgnore
     @Override
     public @Nullable String getPassword() {
         return this.pw;
     }
 
+    @JsonIgnore
     @Override
     public String getUsername() {
         return this.account;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
+    @JsonIgnore
     @Override
     public boolean isEnabled() {
         return true;

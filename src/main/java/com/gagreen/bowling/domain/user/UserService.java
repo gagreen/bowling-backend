@@ -3,12 +3,14 @@ package com.gagreen.bowling.domain.user;
 import com.gagreen.bowling.common.JwtToken;
 import com.gagreen.bowling.domain.user.dto.SignUpDto;
 import com.gagreen.bowling.domain.user.dto.UserDto;
+import com.gagreen.bowling.exception.BadRequestException;
 import com.gagreen.bowling.exception.ResourceNotFoundException;
 import com.gagreen.bowling.security.JwtTokenProvider;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +50,7 @@ public class UserService {
     @Transactional
     public UserDto signUp(SignUpDto dto) {
         if (userRepository.existsByAccount(dto.getAccount())) {
-            throw new IllegalArgumentException("이미 사용 중인 사용자 이름입니다.");
+            throw new BadRequestException("이미 사용 중인 사용자 이름입니다.");
         }
         // Password 암호화
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
