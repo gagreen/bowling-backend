@@ -1,8 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.5'
+    id 'org.springframework.boot' version '3.5.8'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.asciidoctor.jvm.convert' version '4.0.5'
 }
 
 group = 'com.gagreen'
@@ -12,6 +11,13 @@ description = '데이터베이스 설계 프로젝트'
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+bootJar {
+    copySpec {
+        fileMode = 0755    // Gradle 8에서는 제거됨
+        dirMode  = 0755
     }
 }
 
@@ -69,9 +75,4 @@ dependencies {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
-}
-
-tasks.named('asciidoctor') {
-    inputs.dir snippetsDir
-    dependsOn test
 }
