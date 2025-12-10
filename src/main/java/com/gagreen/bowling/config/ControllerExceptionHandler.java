@@ -43,7 +43,7 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
+    public ResponseEntity<ApiBody<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex, WebRequest request) {
 
         Map<String, String> errors = new HashMap<>();
 
@@ -59,7 +59,7 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGlobalException(Exception ex, WebRequest request) {
+    public ResponseEntity<ApiBody<ErrorBody>> handleGlobalException(Exception ex, WebRequest request) {
         ApiBody<ErrorBody> body = ApiBody.error(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 new Date(),
