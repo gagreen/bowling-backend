@@ -27,7 +27,8 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    private static final String[] AUTH_WHITELIST = {"/auth/**", "/centers/*"};
+    private static final String[] AUTH_WHITELIST = {"/auth/**", "/centers/*",
+            "/v3/api-docs/**", "/swagger-ui/**"};
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

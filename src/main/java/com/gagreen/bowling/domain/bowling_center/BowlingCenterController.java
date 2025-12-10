@@ -2,8 +2,8 @@ package com.gagreen.bowling.domain.bowling_center;
 
 import com.gagreen.bowling.domain.bowling_center.dto.BowlingCenterSearchDto;
 import com.gagreen.bowling.exception.BadRequestException;
-import com.nimbusds.oauth2.sdk.util.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
