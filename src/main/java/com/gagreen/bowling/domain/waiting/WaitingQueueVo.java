@@ -2,6 +2,7 @@ package com.gagreen.bowling.domain.waiting;
 
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
 import com.gagreen.bowling.domain.user.UserVo;
+import com.gagreen.bowling.domain.waiting.code.WaitingQueueStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,6 +18,7 @@ import java.time.Instant;
 @Table(name = "waiting_queue")
 public class WaitingQueueVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "queue_id", nullable = false)
     private Long id;
 
@@ -33,6 +35,9 @@ public class WaitingQueueVo {
     @Column(name = "people_count")
     private Integer peopleCount;
 
+    @Column(name = "order_no")
+    private Integer orderNo;
+
     @Size(max = 255)
     @Column(name = "status")
     private String status;
@@ -42,4 +47,12 @@ public class WaitingQueueVo {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    public void setStatus(WaitingQueueStatus status) {
+        this.status = status.getCode();
+    }
+
+    @Transient
+    public String getStatusDesc() {
+        return WaitingQueueStatus.fromCode(this.status).getDescription();
+    }
 }

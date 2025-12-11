@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WaitingStatusDto {
-    private List<WaitingListItem> queue;
+    private Integer waitingTeam;
+    private boolean didRegister;
     private boolean shouldWait;
 }

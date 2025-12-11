@@ -20,7 +20,7 @@ public class WaitingListItem {
     private String status;
     private Instant createdAt;
 
-    private Integer queueNumber; // 대기 순번
+    private Integer orderNo; // 대기 순번
 
     public WaitingListItem(Long queueId, Long centerId, String name, Long userId, Integer peopleCount, String status, Instant createdAt) {
         this.queueId = queueId;

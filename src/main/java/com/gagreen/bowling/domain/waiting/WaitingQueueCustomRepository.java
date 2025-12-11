@@ -9,10 +9,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WaitingQueueCustomRepository {
     List<WaitingListItem> findByUser(UserVo user);
 
     List<WaitingListItem> findByCenter(BowlingCenterVo user);
 
+    Optional<WaitingListItem> findByUserAndCenter(UserVo user, BowlingCenterVo centerVo);
+
+    Optional<Long> countByCenterAndStatus(BowlingCenterVo center, String status);
 }

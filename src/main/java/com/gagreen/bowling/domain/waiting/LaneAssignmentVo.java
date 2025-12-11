@@ -1,6 +1,6 @@
 package com.gagreen.bowling.domain.waiting;
 
-import com.gagreen.bowling.domain.score_record.lane.LaneVo;
+import com.gagreen.bowling.domain.lane.LaneVo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,6 +14,7 @@ import java.time.Instant;
 @Table(name = "lane_assignment")
 public class LaneAssignmentVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "assign_id", nullable = false)
     private Long id;
 
