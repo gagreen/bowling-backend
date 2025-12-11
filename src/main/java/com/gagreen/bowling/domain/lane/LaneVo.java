@@ -1,6 +1,9 @@
-package com.gagreen.bowling.domain.score_record.lane;
+package com.gagreen.bowling.domain.lane;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
+import com.gagreen.bowling.domain.lane.code.LaneStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,6 +14,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "lane")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class LaneVo {
     @Id
     @Column(name = "lane_id", nullable = false)
@@ -19,6 +23,7 @@ public class LaneVo {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "center_id", nullable = false)
+    @JsonIgnore
     private BowlingCenterVo center;
 
     @Column(name = "lane_number")
@@ -27,5 +32,14 @@ public class LaneVo {
     @Size(max = 255)
     @Column(name = "status")
     private String status;
+
+    public void setStatus(LaneStatus status) {
+        this.status = status.getCode();
+    }
+
+    @Transient
+    public String getStatusDesc() {
+        return LaneStatus.fromCode(this.status).getDescription();
+    }
 
 }
