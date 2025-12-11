@@ -1,6 +1,7 @@
 package com.gagreen.bowling.security;
 
 import com.gagreen.bowling.domain.user.UserVo;
+import com.gagreen.bowling.domain.staff.StaffVo;
 import com.gagreen.bowling.exception.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,5 +17,16 @@ public class SecurityUtil {
             throw new AuthenticationCredentialsNotFoundException();
         }
         return (UserVo) authentication.getPrincipal();
+    }
+
+    // 현재 스태프 정보 조회
+    public static StaffVo getCurrentStaff() throws AuthenticationCredentialsNotFoundException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof StaffVo)) {
+            throw new AuthenticationCredentialsNotFoundException();
+        }
+
+        return (StaffVo) authentication.getPrincipal();
     }
 }

@@ -1,12 +1,12 @@
 package com.gagreen.bowling.security;
 
 import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.domain.staff.StaffRepository;
+import com.gagreen.bowling.domain.staff.StaffVo;
 import com.gagreen.bowling.domain.user.UserRepository;
-import com.gagreen.bowling.domain.user.UserVo;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,16 +36,26 @@ public class JwtTokenProvider {
     private int refreshTokenExpiration;
 
     private final UserRepository userRepository;
+    private final StaffRepository staffRepository;
+
+    private static final String TOKEN_TYPE_ACCESS = "ACCESS";
+    private static final String TOKEN_TYPE_REFRESH = "REFRESH";
 
     // application.yml에서 secret 값 가져와서 key에 저장
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, UserRepository userRepository) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
+                            UserRepository userRepository,
+                            StaffRepository staffRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.userRepository = userRepository;
+        this.staffRepository = staffRepository;
     }
 
     // Member 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
     public JwtToken generateToken(Authentication authentication) {
+        log.debug("JWT 토큰 생성 시작 - 사용자: {}, 권한: {}", 
+                authentication.getName(), authentication.getAuthorities());
+        
         // 권한 가져오기
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -53,35 +63,55 @@ public class JwtTokenProvider {
 
         long now = (new Date()).getTime();
 
+        String userType = resolveUserType(authentication.getPrincipal(), authorities);
+        log.debug("사용자 타입 결정 - userType: {}", userType);
+
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + accessTokenExpiration);
         String accessToken = Jwts.builder()
                 .setSubject(authentication.getName())
                 .claim("auth", authorities)
+                .claim("userType", userType)
+                .claim("tokenType", TOKEN_TYPE_ACCESS)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         // Refresh Token 생성
         String refreshToken = Jwts.builder()
+                .setSubject(authentication.getName())
                 .setExpiration(new Date(now + refreshTokenExpiration))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        return JwtToken.builder()
+        JwtToken jwtToken = JwtToken.builder()
                 .grantType("Bearer")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+        
+        log.debug("JWT 토큰 생성 완료 - 사용자: {}, accessToken 만료: {}, refreshToken 만료: {}", 
+                authentication.getName(), accessTokenExpiresIn, new Date(now + refreshTokenExpiration));
+        
+        return jwtToken;
     }
 
     // Jwt 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 메서드
     public Authentication getAuthentication(String accessToken) {
+        log.debug("JWT 토큰 인증 정보 추출 시작");
+        
         // Jwt 토큰 복호화
         Claims claims = parseClaims(accessToken);
 
         if (claims.get("auth") == null) {
+            log.error("JWT 토큰에 권한 정보가 없음 - subject: {}", claims.getSubject());
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+        }
+
+        String tokenType = claims.get("tokenType", String.class);
+        if (!TOKEN_TYPE_ACCESS.equalsIgnoreCase(tokenType)) {
+            log.warn("Access 토큰이 아님 - tokenType: {}, subject: {}", tokenType, claims.getSubject());
+            throw new RuntimeException("Access 토큰이 아닙니다.");
         }
 
         // 클레임에서 권한 정보 가져오기
@@ -89,11 +119,25 @@ public class JwtTokenProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
-        // UserDetails 객체를 만들어서 Authentication return
+        String userType = claims.get("userType", String.class);
 
+        if ("STAFF".equalsIgnoreCase(userType)) {
+            log.debug("스태프 인증 정보 생성 - account: {}", claims.getSubject());
+            UserDetails principal = staffRepository.findByAccount(claims.getSubject())
+                    .orElseThrow(() -> {
+                        log.error("스태프를 찾을 수 없음 - account: {}", claims.getSubject());
+                        return new RuntimeException("사용자를 찾을 수 없습니다.");
+                    });
+            return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        }
 
+        // 기본값: USER
+        log.debug("사용자 인증 정보 생성 - account: {}", claims.getSubject());
         UserDetails principal = userRepository.findByAccount(claims.getSubject())
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음 - account: {}", claims.getSubject());
+                    return new RuntimeException("사용자를 찾을 수 없습니다.");
+                });
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
@@ -106,13 +150,13 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-            log.info("Invalid JWT Token", e);
+            log.warn("Invalid JWT Token - 토큰 형식이 올바르지 않습니다", e);
         } catch (ExpiredJwtException e) {
-            log.info("Expired JWT Token", e);
+            log.warn("Expired JWT Token - 토큰이 만료되었습니다. 만료 시간: {}", e.getClaims().getExpiration(), e);
         } catch (UnsupportedJwtException e) {
-            log.info("Unsupported JWT Token", e);
+            log.warn("Unsupported JWT Token - 지원하지 않는 JWT 토큰입니다", e);
         } catch (IllegalArgumentException e) {
-            log.info("JWT claims string is empty.", e);
+            log.warn("JWT claims string is empty - JWT 클레임이 비어있습니다", e);
         }
         return false;
     }
@@ -129,6 +173,49 @@ public class JwtTokenProvider {
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
+    }
+
+    public JwtToken refreshTokens(String refreshToken) {
+        log.debug("리프레시 토큰으로 새 토큰 생성 시작");
+        
+        if (!validateToken(refreshToken)) {
+            log.warn("리프레시 토큰 검증 실패");
+            throw new RuntimeException("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        Claims claims = parseClaims(refreshToken);
+        String tokenType = claims.get("tokenType", String.class);
+        if (!TOKEN_TYPE_REFRESH.equalsIgnoreCase(tokenType)) {
+            log.warn("Refresh 토큰이 아님 - tokenType: {}", tokenType);
+            throw new RuntimeException("Refresh 토큰이 아닙니다.");
+        }
+
+        Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        String userType = claims.get("userType", String.class);
+        String subject = claims.getSubject();
+
+        UserDetails principal;
+        if ("STAFF".equalsIgnoreCase(userType)) {
+            principal = staffRepository.findByAccount(subject)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        } else {
+            principal = userRepository.findByAccount(subject)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        }
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        log.debug("리프레시 토큰으로 새 토큰 생성 완료 - account: {}", claims.getSubject());
+        return generateToken(authentication);
+    }
+
+    private String resolveUserType(Object principal, String authorities) {
+        if (principal instanceof StaffVo || authorities.contains("STAFF")) {
+            return "STAFF";
+        }
+        return "USER";
     }
 
 }
