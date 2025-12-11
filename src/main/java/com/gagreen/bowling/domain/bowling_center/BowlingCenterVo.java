@@ -1,5 +1,6 @@
 package com.gagreen.bowling.domain.bowling_center;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,6 +14,7 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "bowling_center")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class BowlingCenterVo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
