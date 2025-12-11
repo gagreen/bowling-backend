@@ -20,8 +20,9 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @PostMapping("/centers/{centerId}/favorites")
-    public void add(@AuthenticationPrincipal UserVo user,
-                    @PathVariable Long centerId) {
+    public void add(@PathVariable Long centerId) {
+        UserVo user = SecurityUtil.getCurrentUser();
+
         if (favoriteService.isRegistered(user, centerId)) {
             throw new BadRequestException("이미 즐겨찾기에 추가된 볼링장입니다.");
         }
@@ -32,8 +33,9 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/centers/{centerId}/favorites")
-    public void delete(@AuthenticationPrincipal UserVo user,
-                       @PathVariable Long centerId) {
+    public void delete(@PathVariable Long centerId) {
+        UserVo user = SecurityUtil.getCurrentUser();
+
         if (!favoriteService.isRegistered(user, centerId)) {
             throw new BadRequestException("즐겨찾기에 등록되지 않은 볼링장입니다.");
         }
