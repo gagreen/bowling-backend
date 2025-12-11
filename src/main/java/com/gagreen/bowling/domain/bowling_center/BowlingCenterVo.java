@@ -1,6 +1,7 @@
 package com.gagreen.bowling.domain.bowling_center;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -66,9 +67,11 @@ public class BowlingCenterVo {
 
 
     @Transient
-    private Boolean isMyFavorite = false;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean isMyFavorite;
 
     @Transient
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String myNote;
 
 
