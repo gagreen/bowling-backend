@@ -12,6 +12,7 @@ import lombok.Setter;
 @Table(name = "frame")
 public class FrameVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "frame_id", nullable = false)
     private Long id;
 

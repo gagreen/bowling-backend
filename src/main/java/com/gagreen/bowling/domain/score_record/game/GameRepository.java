@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface GameRepository extends JpaRepository<GameVo, Long>, JpaSpecificationExecutor<GameVo> {
+public interface GameRepository extends JpaRepository<GameVo, Long>, JpaSpecificationExecutor<GameVo>, GameCustomRepository {
 
 }

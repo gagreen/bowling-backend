@@ -1,5 +1,7 @@
 package com.gagreen.bowling.domain.score_record.game;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
 import com.gagreen.bowling.domain.user.UserVo;
 import jakarta.persistence.*;
@@ -14,8 +16,10 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "game")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class GameVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "game_id", nullable = false)
     private Long id;
 
@@ -36,5 +40,17 @@ public class GameVo {
     @ColumnDefault("(now())")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Column(name = "total_score")
+    private Integer totalScore;
+
+    @Column(name = "strike_count")
+    private Integer strikeCount;
+
+    @Column(name = "spare_count")
+    private Integer spareCount;
+
+    @Column(name = "gutter_count")
+    private Integer gutterCount;
 
 }

@@ -12,6 +12,7 @@ import lombok.Setter;
 @Table(name = "roll")
 public class RollVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "roll_id", nullable = false)
     private Long id;
 
@@ -25,5 +26,4 @@ public class RollVo {
 
     @Column(name = "pins")
     private Integer pins;
-
 }
