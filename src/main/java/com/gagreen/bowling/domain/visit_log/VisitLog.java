@@ -16,6 +16,7 @@ import java.time.Instant;
 @Table(name = "visit_log")
 public class VisitLog {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "log_id", nullable = false)
     private Long id;
 
