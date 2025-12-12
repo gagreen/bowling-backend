@@ -24,4 +24,10 @@ public class FrameVo {
     @Column(name = "frame_number")
     private Integer frameNumber;
 
+    @Column(name = "frame_score")
+    private Integer frameScore;
+
+    @Column(name = "is_completed")
+    private Boolean isCompleted;
+
 }
