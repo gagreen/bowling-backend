@@ -38,7 +38,8 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    private static final String[] AUTH_WHITELIST = {"/user-api/auth/**", "/staff-api/auth/**", "/centers/*",
+    private static final String[] AUTH_WHITELIST = {"/user-api/auth/**", "/staff-api/auth/**",
+            "/user-api/centers", "/user-api/centers/*",
             "/v3/api-docs/**", "/swagger-ui/**"};
 
     @Bean
@@ -54,7 +55,6 @@ public class SecurityConfig {
                         .requestMatchers(AUTH_WHITELIST).permitAll()
                         //@PreAuthorization 사용 -> 모든 경로에 대한 인증처리는 Pass
                         .requestMatchers("/staff-api/**").hasAuthority("STAFF")
-                        .requestMatchers("/user-api/**").hasAuthority("USER")
                         .anyRequest().authenticated()
 
                 )

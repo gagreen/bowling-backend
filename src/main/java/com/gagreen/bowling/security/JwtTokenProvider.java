@@ -1,6 +1,6 @@
 package com.gagreen.bowling.security;
 
-import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.common.SignInResultDto;
 import com.gagreen.bowling.domain.staff.StaffRepository;
 import com.gagreen.bowling.domain.staff.StaffVo;
 import com.gagreen.bowling.domain.user.UserRepository;
@@ -17,7 +17,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
@@ -52,7 +54,7 @@ public class JwtTokenProvider {
     }
 
     // Member 정보를 가지고 AccessToken, RefreshToken을 생성하는 메서드
-    public JwtToken generateToken(Authentication authentication) {
+    public SignInResultDto generateToken(Authentication authentication) {
         log.debug("JWT 토큰 생성 시작 - 사용자: {}, 권한: {}", 
                 authentication.getName(), authentication.getAuthorities());
         
@@ -77,14 +79,10 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        // Refresh Token 생성
-        String refreshToken = Jwts.builder()
-                .setSubject(authentication.getName())
-                .setExpiration(new Date(now + refreshTokenExpiration))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+        // Refresh Token 생성 (단순한 랜덤 문자열)
+        String refreshToken = generateRefreshToken();
 
-        JwtToken jwtToken = JwtToken.builder()
+        SignInResultDto signInResultDto = SignInResultDto.builder()
                 .grantType("Bearer")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -93,7 +91,7 @@ public class JwtTokenProvider {
         log.debug("JWT 토큰 생성 완료 - 사용자: {}, accessToken 만료: {}, refreshToken 만료: {}", 
                 authentication.getName(), accessTokenExpiresIn, new Date(now + refreshTokenExpiration));
         
-        return jwtToken;
+        return signInResultDto;
     }
 
     // Jwt 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 메서드
@@ -175,40 +173,11 @@ public class JwtTokenProvider {
         }
     }
 
-    public JwtToken refreshTokens(String refreshToken) {
-        log.debug("리프레시 토큰으로 새 토큰 생성 시작");
-        
-        if (!validateToken(refreshToken)) {
-            log.warn("리프레시 토큰 검증 실패");
-            throw new RuntimeException("유효하지 않은 리프레시 토큰입니다.");
-        }
-
-        Claims claims = parseClaims(refreshToken);
-        String tokenType = claims.get("tokenType", String.class);
-        if (!TOKEN_TYPE_REFRESH.equalsIgnoreCase(tokenType)) {
-            log.warn("Refresh 토큰이 아님 - tokenType: {}", tokenType);
-            throw new RuntimeException("Refresh 토큰이 아닙니다.");
-        }
-
-        Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth").toString().split(","))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        String userType = claims.get("userType", String.class);
-        String subject = claims.getSubject();
-
-        UserDetails principal;
-        if ("STAFF".equalsIgnoreCase(userType)) {
-            principal = staffRepository.findByAccount(subject)
-                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-        } else {
-            principal = userRepository.findByAccount(subject)
-                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-        }
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(principal, "", authorities);
-        log.debug("리프레시 토큰으로 새 토큰 생성 완료 - account: {}", claims.getSubject());
-        return generateToken(authentication);
+    public String generateRefreshToken() {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String resolveUserType(Object principal, String authorities) {
