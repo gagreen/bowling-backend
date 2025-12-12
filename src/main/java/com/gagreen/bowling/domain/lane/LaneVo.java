@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
 import com.gagreen.bowling.domain.lane.code.LaneStatus;
+import com.gagreen.bowling.domain.waiting.WaitingQueueVo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,6 +18,7 @@ import lombok.Setter;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class LaneVo {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lane_id", nullable = false)
     private Long id;
 
@@ -41,5 +43,11 @@ public class LaneVo {
     public String getStatusDesc() {
         return LaneStatus.fromCode(this.status).getDescription();
     }
+
+    @Transient
+    private Boolean isAssigned;
+
+    @Transient
+    private WaitingQueueVo assignedQueue;
 
 }

@@ -1,5 +1,6 @@
 package com.gagreen.bowling.domain.lane;
 
+import com.gagreen.bowling.domain.lane.dto.LaneCreateDto;
 import com.gagreen.bowling.domain.lane.dto.LaneStatusUpdateDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -32,6 +33,18 @@ public class LaneManageController {
         log.debug("내 볼링장 레인 목록 조회 요청");
         List<LaneVo> result = laneService.getMyCenterLanes();
         log.debug("내 볼링장 레인 목록 조회 완료 - 레인 수: {}", result.size());
+        return result;
+    }
+
+    @Operation(summary = "레인 추가", description = "현재 배정된 볼링장에 새로운 레인을 추가합니다.")
+    @ApiResponse(responseCode = "200", description = "생성 성공",
+            content = @Content(schema = @Schema(implementation = LaneVo.class)))
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping
+    public LaneVo createLane(@Valid @RequestBody LaneCreateDto dto) {
+        log.info("레인 추가 요청 - laneNumber: {}, status: {}", dto.getLaneNumber(), dto.getStatus());
+        LaneVo result = laneService.createLane(dto);
+        log.info("레인 추가 완료 - laneId: {}, laneNumber: {}", result.getId(), result.getLaneNumber());
         return result;
     }
 

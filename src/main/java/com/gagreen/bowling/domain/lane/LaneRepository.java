@@ -9,4 +9,6 @@ import java.util.List;
 public interface LaneRepository extends JpaRepository<LaneVo, Long>, JpaSpecificationExecutor<LaneVo>, LaneCustomRepository {
 
     List<LaneVo> findByCenter(BowlingCenterVo center);
+    
+    long countByCenter(BowlingCenterVo center);
 }
