@@ -51,9 +51,6 @@ public class BowlingCenterVo {
     @Column(name = "tel_number", length = 11)
     private String telNumber;
 
-    @Column(name = "lane_count")
-    private Integer laneCount;
-
     @NotNull
     @ColumnDefault("(now())")
     @Column(name = "created_at", nullable = false)
@@ -74,5 +71,7 @@ public class BowlingCenterVo {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String myNote;
 
+    @Transient
+    private Integer laneCount;
 
 }

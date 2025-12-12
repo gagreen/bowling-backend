@@ -35,7 +35,4 @@ public class BowlingCenterUpdateDto {
     @Schema(description = "전화번호", example = "0212345678", maxLength = 11)
     @Size(max = 11, message = "전화번호는 11자 이하여야 합니다.")
     private String telNumber;
-
-    @Schema(description = "레인 수", example = "20")
-    private Integer laneCount;
 }

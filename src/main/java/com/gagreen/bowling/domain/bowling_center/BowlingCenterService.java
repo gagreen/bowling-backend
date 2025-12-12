@@ -3,6 +3,7 @@ package com.gagreen.bowling.domain.bowling_center;
 import com.gagreen.bowling.domain.bowling_center.dto.BowlingCenterSearchDto;
 import com.gagreen.bowling.domain.bowling_center.dto.BowlingCenterUpdateDto;
 import com.gagreen.bowling.domain.favorite.FavoriteService;
+import com.gagreen.bowling.domain.lane.LaneRepository;
 import com.gagreen.bowling.domain.note.CenterNoteVo;
 import com.gagreen.bowling.domain.note.NoteService;
 import com.gagreen.bowling.domain.staff.StaffRepository;
@@ -14,13 +15,11 @@ import com.gagreen.bowling.exception.ResourceNotFoundException;
 import com.gagreen.bowling.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import java.time.Instant;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,20 +29,33 @@ public class BowlingCenterService {
     private final FavoriteService favoriteService;
     private final NoteService noteService;
     private final StaffRepository staffRepository;
+    private final LaneRepository laneRepository;
 
     @GetMapping
     public Page<BowlingCenterVo> searchList(BowlingCenterSearchDto dto) {
-        return repository.search(dto);
+        Page<BowlingCenterVo> page = repository.search(dto);
+        
+        // 각 볼링장의 레인 개수 계산
+        page.getContent().forEach(center -> {
+            long laneCount = laneRepository.countByCenter(center);
+            center.setLaneCount((int) laneCount);
+        });
+        
+        return page;
     }
 
     public BowlingCenterVo getItem(Long centerId) {
-        return getItem(centerId, true);
+        return getItem(centerId, false);
     }
 
     public BowlingCenterVo getItem(Long centerId, boolean isWithUserData) {
 
         BowlingCenterVo center = repository.findById(centerId)
                 .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 볼링장입니다."));
+
+        // 레인 개수 계산
+        long laneCount = laneRepository.countByCenter(center);
+        center.setLaneCount((int) laneCount);
 
         if (isWithUserData) {
             // 로그인된 사용자의 경우, 즐겨찾기 여부와 메모 정보를 추가
@@ -78,7 +90,13 @@ public class BowlingCenterService {
             throw new BadRequestException("센터에 배정되지 않은 스태프입니다.");
         }
 
-        return persistedStaff.getCenter();
+        BowlingCenterVo center = persistedStaff.getCenter();
+        
+        // 레인 개수 계산
+        long laneCount = laneRepository.countByCenter(center);
+        center.setLaneCount((int) laneCount);
+
+        return center;
     }
 
     /**
@@ -118,10 +136,11 @@ public class BowlingCenterService {
         if (dto.getTelNumber() != null) {
             center.setTelNumber(dto.getTelNumber());
         }
-        if (dto.getLaneCount() != null) {
-            center.setLaneCount(dto.getLaneCount());
-        }
         center.setUpdatedAt(Instant.now());
+        
+        // 레인 개수 계산
+        long laneCount = laneRepository.countByCenter(center);
+        center.setLaneCount((int) laneCount);
 
         return repository.save(center);
     }

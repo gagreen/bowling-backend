@@ -9,7 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 @Data
 @Schema(description = "JWT 토큰 응답")
-public class JwtToken {
+public class SignInResultDto {
     @Schema(description = "인증 타입", example = "Bearer", requiredMode = Schema.RequiredMode.REQUIRED)
     private String grantType; // JWT에 대한 인증 타입, Bearer 인증 방식 사용할 예정
     
@@ -18,4 +18,7 @@ public class JwtToken {
     
     @Schema(description = "리프레시 토큰", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", requiredMode = Schema.RequiredMode.REQUIRED)
     private String refreshToken;
+
+    private Long id;
+    private String nickname;
 }
