@@ -142,9 +142,25 @@ public class WaitingService {
             throw new BadRequestException("이미 사용 중인 레인입니다.");
         }
 
+        // orderNo 순서 확인: 더 작은 orderNo를 가진 WAITING 상태의 대기열이 있는지 확인
+        List<WaitingQueueVo> waitingQueues = waitingQueueRepository.findByCenterAndStatus(
+                center, WaitingQueueStatus.WAITING.getCode());
+        boolean hasEarlierQueue = waitingQueues.stream()
+                .filter(wq -> !wq.getId().equals(queue.getId())) // 현재 대기열 제외
+                .anyMatch(wq -> wq.getOrderNo() != null && 
+                        queue.getOrderNo() != null && 
+                        wq.getOrderNo() < queue.getOrderNo());
+        
+        if (hasEarlierQueue) {
+            log.warn("레인 배정 실패 - 순서 위반. queueId: {}, orderNo: {}, 더 작은 orderNo가 존재", 
+                    dto.getQueueId(), queue.getOrderNo());
+            throw new BadRequestException("더 먼저 대기한 항목이 있습니다. 순서대로 배정해 주세요.");
+        }
+
         // 레인 배정 생성
         LaneAssignmentVo assignment = new LaneAssignmentVo();
         assignment.setLane(lane);
+        assignment.setQueue(queue);
         assignment.setAssignedAt(Instant.now());
         laneAssignmentRepository.save(assignment);
 
@@ -156,6 +172,52 @@ public class WaitingService {
                 dto.getQueueId(), dto.getLaneId(), assignment.getId());
     }
 
+    /**
+     * 레인 배정을 종료하고 finishedAt을 설정합니다.
+     * @param dto 레인 배정 종료 요청 DTO
+     * @throws ResourceNotFoundException 레인 또는 배정이 존재하지 않는 경우
+     * @throws BadRequestException 레인이 배정되지 않았거나 이미 종료된 경우
+     */
+    @Transactional
+    public void finishLaneAssignment(com.gagreen.bowling.domain.waiting.dto.LaneAssignmentFinishDto dto) {
+        BowlingCenterVo center = bowlingCenterService.getAssignedCenter();
+        log.info("레인 배정 종료 시도 - laneId: {}", dto.getLaneId());
+
+        // 레인 조회
+        LaneVo lane = laneRepository.findById(dto.getLaneId())
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 레인입니다."));
+
+        // 레인이 해당 센터의 것인지 확인
+        if (!lane.getCenter().getId().equals(center.getId())) {
+            log.warn("레인 배정 종료 실패 - 레인 권한 없음. laneId: {}, centerId: {}, 요청 centerId: {}", 
+                    dto.getLaneId(), lane.getCenter().getId(), center.getId());
+            throw new BadRequestException("현재 배정된 센터의 레인만 처리할 수 있습니다.");
+        }
+
+        // 현재 배정된 레인 배정 조회
+        Optional<LaneAssignmentVo> assignmentOpt = laneAssignmentRepository.findByLaneAndFinishedAtIsNull(lane);
+        if (assignmentOpt.isEmpty()) {
+            log.warn("레인 배정 종료 실패 - 배정되지 않음. laneId: {}", dto.getLaneId());
+            throw new BadRequestException("배정되지 않은 레인입니다.");
+        }
+
+        LaneAssignmentVo assignment = assignmentOpt.get();
+        
+        // 이미 종료된 경우 확인 (이중 체크)
+        if (assignment.getFinishedAt() != null) {
+            log.warn("레인 배정 종료 실패 - 이미 종료됨. laneId: {}, assignId: {}", 
+                    dto.getLaneId(), assignment.getId());
+            throw new BadRequestException("이미 종료된 레인 배정입니다.");
+        }
+
+        // finishedAt 설정
+        assignment.setFinishedAt(Instant.now());
+        laneAssignmentRepository.save(assignment);
+
+        log.info("레인 배정 종료 완료 - laneId: {}, assignId: {}", 
+                dto.getLaneId(), assignment.getId());
+    }
+
     // 직원이 배정된 센터의 대기열 조회
     @Transactional(readOnly = true)
     public List<WaitingListItem> getMyCenterQueues() {
@@ -164,6 +226,45 @@ public class WaitingService {
         List<WaitingListItem> queues = waitingQueueRepository.findByCenter(center);
         log.debug("센터 대기열 조회 완료 - centerId: {}, 대기 건수: {}", center.getId(), queues.size());
         return queues;
+    }
+
+    // 사용자가 대기 취소
+    @Transactional
+    public void cancelWaiting(UserVo user, Long centerId) {
+        log.info("대기 취소 시도 - userId: {}, centerId: {}", user.getId(), centerId);
+
+        BowlingCenterVo center = bowlingCenterService.getItem(centerId, false);
+
+        // 해당 센터에서 사용자가 등록한 WAITING 상태의 대기열 조회
+        Optional<WaitingListItem> queueItem = waitingQueueRepository.findByUserAndCenter(user, center);
+        
+        if (queueItem.isEmpty()) {
+            throw new ResourceNotFoundException("등록된 대기열이 없습니다.");
+        }
+
+        // 실제 엔티티 조회
+        WaitingQueueVo queue = waitingQueueRepository.findById(queueItem.get().getQueueId())
+                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 대기열입니다."));
+
+        // 본인이 등록한 대기열인지 확인
+        if (!queue.getUser().getId().equals(user.getId())) {
+            log.warn("대기 취소 실패 - 권한 없음. userId: {}, queueId: {}, 등록자 userId: {}", 
+                    user.getId(), queue.getId(), queue.getUser().getId());
+            throw new BadRequestException("본인이 등록한 대기열만 취소할 수 있습니다.");
+        }
+
+        // 대기 상태가 WAITING인지 확인
+        if (!WaitingQueueStatus.WAITING.getCode().equals(queue.getStatus())) {
+            log.warn("대기 취소 실패 - 대기 상태 아님. queueId: {}, status: {}", queue.getId(), queue.getStatus());
+            throw new BadRequestException("대기 중인 항목만 취소할 수 있습니다.");
+        }
+
+        // 대기열 상태를 CANCELED로 변경
+        queue.setStatus(WaitingQueueStatus.CANCELED);
+        waitingQueueRepository.save(queue);
+
+        log.info("대기 취소 완료 - userId: {}, centerId: {}, queueId: {}", 
+                user.getId(), centerId, queue.getId());
     }
 
 }

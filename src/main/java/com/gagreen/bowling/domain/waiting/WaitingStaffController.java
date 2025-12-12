@@ -1,6 +1,7 @@
 package com.gagreen.bowling.domain.waiting;
 
 import com.gagreen.bowling.domain.waiting.dto.LaneAssignmentDto;
+import com.gagreen.bowling.domain.waiting.dto.LaneAssignmentFinishDto;
 import com.gagreen.bowling.domain.waiting.dto.WaitingListItem;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,6 +45,16 @@ public class WaitingStaffController {
         log.info("레인 배정 요청 - queueId: {}, laneId: {}", dto.getQueueId(), dto.getLaneId());
         waitingService.assignLaneToQueue(dto);
         log.info("레인 배정 완료 - queueId: {}, laneId: {}", dto.getQueueId(), dto.getLaneId());
+    }
+
+    @Operation(summary = "레인 배정 종료", description = "레인 배정을 종료하고 finishedAt을 설정합니다. 레인이 다시 사용 가능해집니다.")
+    @ApiResponse(responseCode = "200", description = "종료 성공")
+    @SecurityRequirement(name = "BearerAuth")
+    @PatchMapping("/queues/finish")
+    public void finishLaneAssignment(@Valid @RequestBody LaneAssignmentFinishDto dto) {
+        log.info("레인 배정 종료 요청 - laneId: {}", dto.getLaneId());
+        waitingService.finishLaneAssignment(dto);
+        log.info("레인 배정 종료 완료 - laneId: {}", dto.getLaneId());
     }
 
 }

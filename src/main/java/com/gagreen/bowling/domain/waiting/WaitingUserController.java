@@ -79,5 +79,14 @@ public class WaitingUserController {
         return waitingService.registerWaiting(user, dto);
     }
 
+    @Operation(summary = "대기 취소", description = "등록한 대기열을 취소합니다.")
+    @ApiResponse(responseCode = "200", description = "취소 성공")
+    @SecurityRequirement(name = "BearerAuth")
+    @DeleteMapping("/centers/{centerId}/queues")
+    public void cancelQueue(@PathVariable Long centerId) {
+        UserVo user = SecurityUtil.getCurrentUser();;
+
+        waitingService.cancelWaiting(user, centerId);
+    }
 
 }

@@ -23,6 +23,11 @@ public class LaneAssignmentVo {
     @JoinColumn(name = "lane_id", nullable = false)
     private LaneVo lane;
 
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "queue_id", nullable = false)
+    private WaitingQueueVo queue;
+
     @Column(name = "assigned_at")
     private Instant assignedAt;
 

@@ -1,5 +1,7 @@
 package com.gagreen.bowling.domain.waiting;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterVo;
 import com.gagreen.bowling.domain.user.UserVo;
 import com.gagreen.bowling.domain.waiting.code.WaitingQueueStatus;
@@ -16,6 +18,7 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "waiting_queue")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class WaitingQueueVo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,11 +28,13 @@ public class WaitingQueueVo {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private UserVo user;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "center_id", nullable = false)
+    @JsonIgnore
     private BowlingCenterVo center;
 
     @Column(name = "people_count")

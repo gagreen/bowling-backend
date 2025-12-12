@@ -11,4 +11,5 @@ import java.util.List;
 @Repository
 public interface WaitingQueueRepository extends JpaRepository<WaitingQueueVo, Long>, JpaSpecificationExecutor<WaitingQueueVo>, WaitingQueueCustomRepository {
 
+    List<WaitingQueueVo> findByCenterAndStatus(BowlingCenterVo center, String status);
 }
