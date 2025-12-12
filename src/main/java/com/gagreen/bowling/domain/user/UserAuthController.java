@@ -1,6 +1,6 @@
 package com.gagreen.bowling.domain.user;
 
-import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.common.SignInResultDto;
 import com.gagreen.bowling.common.dto.RefreshTokenRequest;
 import com.gagreen.bowling.domain.user.dto.SignInDto;
 import com.gagreen.bowling.domain.user.dto.SignUpDto;
@@ -29,13 +29,13 @@ public class UserAuthController {
 
     @Operation(summary = "사용자 로그인", description = "계정과 비밀번호를 통해 로그인하고 JWT 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "로그인 성공",
-            content = @Content(schema = @Schema(implementation = JwtToken.class)))
+            content = @Content(schema = @Schema(implementation = SignInResultDto.class)))
     @PostMapping("/sign-in")
-    public JwtToken signIn(@RequestBody SignInDto dto) {
+    public SignInResultDto signIn(@RequestBody SignInDto dto) {
         log.info("로그인 요청 수신 - account: {}", dto.getAccount());
-        JwtToken jwtToken = userService.signIn(dto.getAccount(), dto.getPassword());
+        SignInResultDto signInResultDto = userService.signIn(dto.getAccount(), dto.getPassword());
         log.info("로그인 응답 반환 - account: {}", dto.getAccount());
-        return jwtToken;
+        return signInResultDto;
     }
 
     @Operation(summary = "인증 테스트", description = "JWT 토큰을 통한 인증 테스트용 엔드포인트입니다.")
@@ -60,11 +60,11 @@ public class UserAuthController {
 
     @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "토큰 갱신 성공",
-            content = @Content(schema = @Schema(implementation = JwtToken.class)))
+            content = @Content(schema = @Schema(implementation = SignInResultDto.class)))
     @PostMapping("/refresh")
-    public JwtToken refresh(@RequestBody RefreshTokenRequest request) {
+    public SignInResultDto refresh(@RequestBody RefreshTokenRequest request) {
         log.debug("토큰 갱신 요청 수신");
-        JwtToken result = userService.refresh(request.getRefreshToken());
+        SignInResultDto result = userService.refresh(request.getRefreshToken());
         log.info("토큰 갱신 응답 반환");
         return result;
     }

@@ -1,6 +1,5 @@
 package com.gagreen.bowling.domain.user;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,4 +10,6 @@ public interface UserRepository extends JpaRepository<UserVo, Long> {
     boolean existsByAccount(String account);
 
     Optional<UserVo> findByAccount(String account);
+    
+    Optional<UserVo> findByRefreshToken(String refreshToken);
 }

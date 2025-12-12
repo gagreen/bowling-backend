@@ -1,6 +1,6 @@
 package com.gagreen.bowling.domain.user;
 
-import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.common.SignInResultDto;
 import com.gagreen.bowling.domain.user.dto.SignUpDto;
 import com.gagreen.bowling.domain.user.dto.UserDto;
 import com.gagreen.bowling.exception.BadRequestException;
@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +37,7 @@ public class UserService {
     }
 
     @Transactional
-    public JwtToken signIn(String username, String password) {
+    public SignInResultDto signIn(String username, String password) {
         log.info("로그인 시도 - username: {}", username);
         
         // 1. username + password 를 기반으로 Authentication 객체 생성
@@ -50,17 +49,47 @@ public class UserService {
         log.debug("인증 성공 - username: {}, 권한: {}", username, authentication.getAuthorities());
 
         // 3. 인증 정보를 기반으로 JWT 토큰 생성
-        JwtToken jwtToken = jwtTokenProvider.generateToken(authentication);
+        SignInResultDto signInResultDto = jwtTokenProvider.generateToken(authentication);
+        
+        // 4. Refresh Token을 DB에 저장
+        UserVo user = userRepository.findByAccount(username)
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        user.setRefreshToken(signInResultDto.getRefreshToken());
+        userRepository.save(user);
+
+        signInResultDto.setId(user.getId());
+        signInResultDto.setNickname(user.getNickname());
         log.info("로그인 성공 - username: {}", username);
 
-        return jwtToken;
+        return signInResultDto;
     }
 
-    @Transactional(readOnly = true)
-    public JwtToken refresh(String refreshToken) {
+    @Transactional
+    public SignInResultDto refresh(String refreshToken) {
         log.debug("토큰 갱신 요청 - refreshToken 길이: {}", refreshToken != null ? refreshToken.length() : 0);
-        JwtToken newToken = jwtTokenProvider.refreshTokens(refreshToken);
-        log.info("토큰 갱신 성공");
+        
+        if (refreshToken == null || refreshToken.isBlank()) {
+            log.warn("토큰 갱신 실패 - refreshToken이 비어있음");
+            throw new BadRequestException("리프레시 토큰이 필요합니다.");
+        }
+        
+        // DB에서 refreshToken과 일치하는 사용자 찾기
+        UserVo user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> {
+                    log.warn("토큰 갱신 실패 - 유효하지 않은 refreshToken");
+                    return new BadRequestException("유효하지 않은 리프레시 토큰입니다.");
+                });
+        
+        // 새로운 토큰 생성
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user, null, user.getAuthorities());
+        SignInResultDto newToken = jwtTokenProvider.generateToken(authentication);
+        
+        // 새로운 refreshToken을 DB에 저장
+        user.setRefreshToken(newToken.getRefreshToken());
+        userRepository.save(user);
+        
+        log.info("토큰 갱신 성공 - userId: {}", user.getId());
         return newToken;
     }
 

@@ -60,6 +60,11 @@ public class StaffVo implements UserDetails {
     private Instant updatedAt;
 
     @JsonIgnore
+    @Size(max = 255)
+    @Column(name = "refresh_token", length = 255)
+    private String refreshToken;
+
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("STAFF"));

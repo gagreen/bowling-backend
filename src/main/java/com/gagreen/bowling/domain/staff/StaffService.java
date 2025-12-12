@@ -1,6 +1,6 @@
 package com.gagreen.bowling.domain.staff;
 
-import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.common.SignInResultDto;
 import com.gagreen.bowling.domain.staff.dto.StaffSignUpDto;
 import com.gagreen.bowling.domain.user.dto.SignInDto;
 import com.gagreen.bowling.domain.bowling_center.BowlingCenterRepository;
@@ -31,7 +31,7 @@ public class StaffService {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional(readOnly = true)
-    public JwtToken signIn(SignInDto dto) {
+    public SignInResultDto signIn(SignInDto dto) {
         log.info("스태프 로그인 시도 - account: {}", dto.getAccount());
         
         StaffVo staff = staffRepository.findByAccount(dto.getAccount())
@@ -49,13 +49,44 @@ public class StaffService {
                 staff, null, staff.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // JWT 토큰 생성
+        SignInResultDto signInResultDto = jwtTokenProvider.generateToken(authentication);
+        
+        // Refresh Token을 DB에 저장
+        staff.setRefreshToken(signInResultDto.getRefreshToken());
+        staffRepository.save(staff);
+
         log.info("스태프 로그인 성공 - staffId: {}, account: {}", staff.getId(), staff.getAccount());
-        return jwtTokenProvider.generateToken(authentication);
+        return signInResultDto;
     }
 
-    @Transactional(readOnly = true)
-    public JwtToken refresh(String refreshToken) {
-        return jwtTokenProvider.refreshTokens(refreshToken);
+    @Transactional
+    public SignInResultDto refresh(String refreshToken) {
+        log.debug("스태프 토큰 갱신 요청 - refreshToken 길이: {}", refreshToken != null ? refreshToken.length() : 0);
+        
+        if (refreshToken == null || refreshToken.isBlank()) {
+            log.warn("스태프 토큰 갱신 실패 - refreshToken이 비어있음");
+            throw new BadRequestException("리프레시 토큰이 필요합니다.");
+        }
+        
+        // DB에서 refreshToken과 일치하는 스태프 찾기
+        StaffVo staff = staffRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> {
+                    log.warn("스태프 토큰 갱신 실패 - 유효하지 않은 refreshToken");
+                    return new BadRequestException("유효하지 않은 리프레시 토큰입니다.");
+                });
+        
+        // 새로운 토큰 생성
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                staff, null, staff.getAuthorities());
+        SignInResultDto newToken = jwtTokenProvider.generateToken(authentication);
+        
+        // 새로운 refreshToken을 DB에 저장
+        staff.setRefreshToken(newToken.getRefreshToken());
+        staffRepository.save(staff);
+        
+        log.info("스태프 토큰 갱신 성공 - staffId: {}", staff.getId());
+        return newToken;
     }
 
     @Transactional

@@ -1,6 +1,6 @@
 package com.gagreen.bowling.domain.staff;
 
-import com.gagreen.bowling.common.JwtToken;
+import com.gagreen.bowling.common.SignInResultDto;
 import com.gagreen.bowling.common.dto.RefreshTokenRequest;
 import com.gagreen.bowling.domain.user.dto.SignInDto;
 import com.gagreen.bowling.domain.staff.dto.StaffSignUpDto;
@@ -25,9 +25,9 @@ public class StaffAuthController {
 
     @Operation(summary = "직원 로그인", description = "직원 계정과 비밀번호를 통해 로그인하고 JWT 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "로그인 성공",
-            content = @Content(schema = @Schema(implementation = JwtToken.class)))
+            content = @Content(schema = @Schema(implementation = SignInResultDto.class)))
     @PostMapping("/sign-in")
-    public JwtToken signIn(@RequestBody SignInDto dto) {
+    public SignInResultDto signIn(@RequestBody SignInDto dto) {
         return staffService.signIn(dto);
     }
 
@@ -41,9 +41,9 @@ public class StaffAuthController {
 
     @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "토큰 갱신 성공",
-            content = @Content(schema = @Schema(implementation = JwtToken.class)))
+            content = @Content(schema = @Schema(implementation = SignInResultDto.class)))
     @PostMapping("/refresh")
-    public JwtToken refresh(@RequestBody RefreshTokenRequest request) {
+    public SignInResultDto refresh(@RequestBody RefreshTokenRequest request) {
         return staffService.refresh(request.getRefreshToken());
     }
 }
